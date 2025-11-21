@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
+import DialogShell from '@/components/ui/dialog-shell'
 import { Tabs, TabsList, TabsTrigger } from '../../components/ui/shadcn/Tabs'
 import Button from '../../components/ui/Button'
 import { Input } from '@/components/ui/input'
@@ -100,12 +101,18 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   return (
     <>
     <Dialog open={open} onOpenChange={(v)=>{ if(!v) onClose() }}>
-      <DialogContent className="sm:max-w-[768px]">
-        <DialogHeader>
-          <DialogTitle>全局设置</DialogTitle>
-          <DialogDescription>系统配置</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col md:flex-row md:gap-6">
+      <DialogShell
+        title="全局设置"
+        description="系统配置"
+        contentClassName="sm:max-w-[768px]"
+        bodyClassName="flex flex-col md:flex-row md:gap-6 space-y-6 md:space-y-0"
+        footer={(
+          <>
+            <Button variant="secondary" size="sm" onClick={onClose}>取消</Button>
+            <Button variant="default" size="sm" onClick={handleSave}>保存</Button>
+          </>
+        )}
+      >
           <aside className="block w-[180px] bg-surface px-4 py-5 md:border-r md:border-app">
             <div className="text-secondary brand-body-xs px-3 py-1">系统</div>
             <div className="mt-2 space-y-1">
@@ -276,46 +283,42 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
               <div className="text-secondary brand-body-xs">此分组暂未配置，请稍后</div>
             )}
 
-          <DialogFooter>
-            <Button variant="secondary" size="sm" onClick={onClose}>取消</Button>
-            <Button variant="default" size="sm" onClick={handleSave}>保存</Button>
-          </DialogFooter>
-          </section>
-        </div>
-      </DialogContent>
-    </Dialog>
-    {manageOpen && (
-      <Dialog open={manageOpen} onOpenChange={(v)=>{ if(!v) setManageOpen(false) }}>
-        <DialogContent className="sm:max-w-[640px] p-4 space-y-3">
-          <DialogHeader>
-            <DialogTitle className="text-primary brand-title-md">{`${provider.toUpperCase()} API 密钥管理`}</DialogTitle>
-          </DialogHeader>
-          {(s.ai.keysList[provider] || []).map((k, i) => (
-            <div key={i} className="flex items-center justify-between rounded-sm bg-app border border-app px-3 py-2">
-              <span className="brand-body-sm text-primary">{showKeyList[i] ? k : (k?.slice(0,6) + '****' + k?.slice(-4))}</span>
-              <div className="flex items-center gap-3">
-                <button type="button" className="text-secondary" onClick={()=>setShowKeyList(prev=>{ const next=[...prev]; next[i]=!next[i]; return next })}>
-                  <Eye className="w-[14px] h-[14px]" />
-                </button>
-                
-                <button type="button" className="text-secondary" onClick={()=>{
-                  const list = (s.ai.keysList[provider] || []).filter((_,idx)=>idx!==i); setKeysList(list)
-                }}>
-                  <Trash className="w-[14px] h-[14px]" />
-                </button>
-              </div>
-            </div>
-          ))}
-          <div className="flex items-center justify-between">
-            <span className="text-secondary brand-body-xs">多个密钥使用逗号或空格分隔</span>
-            <button type="button" className="inline-flex items-center gap-2 rounded-sm bg-primary text-text-inverse px-3 py-2 brand-body-sm" onClick={()=>{
-              const nv = prompt('新增密钥')
-              if (nv && nv.trim()) setKeysList([...(s.ai.keysList[provider] || []), nv.trim()])
-            }}>添加</button>
-          </div>
-        </DialogContent>
+            </section>
+      </DialogShell>
       </Dialog>
-    )}
+      {manageOpen && (
+        <Dialog open={manageOpen} onOpenChange={(v)=>{ if(!v) setManageOpen(false) }}>
+          <DialogShell
+            title={`${provider.toUpperCase()} API 密钥管理`}
+            contentClassName="sm:max-w-[640px]"
+            bodyClassName="space-y-3"
+          >
+            {(s.ai.keysList[provider] || []).map((k, i) => (
+              <div key={i} className="flex items-center justify-between rounded-sm bg-app border border-app px-3 py-2">
+                <span className="brand-body-sm text-primary">{showKeyList[i] ? k : (k?.slice(0,6) + '****' + k?.slice(-4))}</span>
+                <div className="flex items-center gap-3">
+                  <button type="button" className="text-secondary" onClick={()=>setShowKeyList(prev=>{ const next=[...prev]; next[i]=!next[i]; return next })}>
+                    <Eye className="w-[14px] h-[14px]" />
+                  </button>
+
+                  <button type="button" className="text-secondary" onClick={()=>{
+                    const list = (s.ai.keysList[provider] || []).filter((_,idx)=>idx!==i); setKeysList(list)
+                  }}>
+                    <Trash className="w-[14px] h-[14px]" />
+                  </button>
+                </div>
+              </div>
+            ))}
+            <div className="flex items-center justify-between">
+              <span className="text-secondary brand-body-xs">多个密钥使用逗号或空格分隔</span>
+              <button type="button" className="inline-flex items-center gap-2 rounded-sm bg-primary text-text-inverse px-3 py-2 brand-body-sm" onClick={()=>{
+                const nv = prompt('新增密钥')
+                if (nv && nv.trim()) setKeysList([...(s.ai.keysList[provider] || []), nv.trim()])
+              }}>添加</button>
+            </div>
+          </DialogShell>
+        </Dialog>
+      )}
     </>
   )
 }

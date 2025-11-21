@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
+import DialogShell from '@/components/ui/dialog-shell'
 import Button from '../ui/Button'
 import { createProject, loadProjects, saveProjects, saveProject, type ProjectItem } from '../../store/project'
 import { parseStoryboardText } from '../../utils/storyboard'
@@ -124,12 +125,18 @@ export default function NewProjectDialog({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v)=>{ if(!v) onClose() }}>
-      <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader>
-          <DialogTitle>新建作品</DialogTitle>
-          <DialogDescription>填写作品名称并上传分镜文件</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-col gap-[16px]">
+      <DialogShell
+        title="新建作品"
+        description="填写作品名称并上传分镜文件"
+        contentClassName="sm:max-w-[640px]"
+        bodyClassName="flex flex-col gap-[16px]"
+        footer={(
+          <>
+            <Button variant="secondary" size="sm" disabled={submitting} onClick={onClose}>取消</Button>
+            <Button variant="default" size="sm" disabled={submitting || !name.trim()} onClick={onSubmit}>{submitting ? '创建中...' : '创建项目'}</Button>
+          </>
+        )}
+      >
         <div className="flex flex-col gap-[8px]">
           <label className="brand-title-md font-medium text-primary" htmlFor="new-project-name">作品名称</label>
           <div className="relative">
@@ -198,18 +205,12 @@ export default function NewProjectDialog({ open, onClose }: Props) {
           )}
         </div>
 
-        <DialogFooter>
-          <Button variant="secondary" size="sm" disabled={submitting} onClick={onClose}>取消</Button>
-          <Button variant="default" size="sm" disabled={submitting || !name.trim()} onClick={onSubmit}>{submitting ? '创建中...' : '创建项目'}</Button>
-        </DialogFooter>
-
         {toast && (
           <div className="fixed bottom-[20px] left-1/2 -translate-x-1/2 z-[200]">
             <div className={`px-[12px] py-[8px] rounded-[8px] ${toast.type === 'success' ? 'bg-success-subtle text-success' : 'bg-error-subtle text-error'}`}>{toast.text}</div>
           </div>
         )}
-        </div>
-      </DialogContent>
+      </DialogShell>
     </Dialog>
   )
 }

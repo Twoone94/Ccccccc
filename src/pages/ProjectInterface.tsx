@@ -4,7 +4,8 @@ import VideoThumbList from '../components/business/VideoThumbList'
 import ImageThumbList from '../components/business/ImageThumbList'
 import Toolbar from '../components/ui/Toolbar'
 import Button from '../components/ui/Button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogFooter } from '@/components/ui/dialog'
+import DialogShell from '@/components/ui/dialog-shell'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
@@ -499,13 +500,14 @@ export default function ProjectInterface() {
             <X className="w-[18px] h-[18px]" />
           </button>
     <Dialog open={previewOpen} onOpenChange={(v)=>{ if(!v) setPreviewOpen(false) }}>
-      <DialogContent className="sm:max-w-[840px]">
-        <DialogHeader>
-          <DialogTitle>{previewTarget?.video ? `预览 ${previewTarget.video}` : '预览'}</DialogTitle>
-        </DialogHeader>
+      <DialogShell
+        title={previewTarget?.video ? `预览 ${previewTarget.video}` : '预览'}
+        contentClassName="sm:max-w-[840px]"
+        bodyClassName="space-y-2"
+      >
         <div className="bg-black rounded w-full" style={{ aspectRatio: '16 / 9' }} />
         <p className="mt-[8px] text-xs text-white/70">行号: {previewTarget?.id} {previewTarget?.video ? `视频: ${previewTarget.video}` : '未选择视频'}</p>
-      </DialogContent>
+      </DialogShell>
     </Dialog>
     
     <SettingsDialog open={figmaSettingsOpen} onClose={() => setFigmaSettingsOpen(false)} />
