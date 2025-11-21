@@ -710,7 +710,8 @@ export default function ProjectInterface() {
                               const prv = items[curIdx - 1]
                               const lines = (cur.scriptLines && cur.scriptLines.length > 0 ? cur.scriptLines : splitChineseSentences(cur.script ?? cur.description))
                               const plines = (prv.scriptLines && prv.scriptLines.length > 0 ? prv.scriptLines : splitChineseSentences(prv.script ?? prv.description))
-                              items[curIdx - 1] = { ...prv, scriptLines: [...plines, ...lines] }
+                              const mergedLines = [...plines, ...lines]
+                              items[curIdx - 1] = { ...prv, scriptLines: mergedLines, script: mergedLines.join('') }
                               items.splice(curIdx, 1)
                               items.forEach((it, i) => { it.id = i + 1 })
                               const stats = calculateStats(items)
@@ -733,8 +734,8 @@ export default function ProjectInterface() {
                               if (lines.length <= 1 || idx >= lines.length - 1) return prev
                               const keep = lines.slice(0, idx + 1)
                               const rest = lines.slice(idx + 1)
-                              items[curIdx] = { ...cur, scriptLines: keep }
-                              const insertItem = { ...cur, id: cur.id + 1, scriptLines: rest, script: (cur.script ?? cur.description) }
+                              items[curIdx] = { ...cur, scriptLines: keep, script: keep.join('') }
+                              const insertItem = { ...cur, id: cur.id + 1, scriptLines: rest, script: rest.join('') }
                               items.splice(curIdx + 1, 0, insertItem)
                               items.forEach((it, i) => { it.id = i + 1 })
                               const stats = calculateStats(items)
