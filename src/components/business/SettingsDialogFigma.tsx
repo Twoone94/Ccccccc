@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
+import DialogShell from '@/components/ui/dialog-shell'
 import Button from '@/components/ui/Button'
 import { loadSettings, saveSettings, type Settings, type AIProvider } from '../../store/settings'
 
@@ -30,12 +31,18 @@ export default function SettingsDialogFigma({ open, onClose }: { open: boolean; 
   const handleSave = () => { saveSettings(s); onClose() }
   return (
     <Dialog open={open} onOpenChange={(v)=>{ if(!v) onClose() }}>
-      <DialogContent className="sm:max-w-[768px]">
-        <DialogHeader>
-          <DialogTitle>全局设置</DialogTitle>
-          <DialogDescription>shadcn 风格</DialogDescription>
-        </DialogHeader>
-        <div className="w-full">
+      <DialogShell
+        title="全局设置"
+        description="shadcn 风格"
+        contentClassName="sm:max-w-[768px]"
+        bodyClassName="w-full flex flex-col space-y-6"
+        footer={(
+          <>
+            <Button variant="secondary" size="sm" onClick={onClose}>取消</Button>
+            <Button variant="default" size="sm" onClick={handleSave}>保存</Button>
+          </>
+        )}
+      >
         <div className="flex">
           <aside className="w-[180px] bg-surface px-4 py-5 border-r border-app">
             <div className="text-secondary brand-body-xs px-3 py-1">基础设置</div>
@@ -109,12 +116,7 @@ export default function SettingsDialogFigma({ open, onClose }: { open: boolean; 
             </div>
           </section>
         </div>
-        <DialogFooter>
-          <Button variant="secondary" size="sm" onClick={onClose}>取消</Button>
-          <Button variant="default" size="sm" onClick={handleSave}>保存</Button>
-        </DialogFooter>
-        </div>
-      </DialogContent>
+      </DialogShell>
     </Dialog>
   )
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog } from '@/components/ui/dialog'
+import DialogShell from '@/components/ui/dialog-shell'
 import Button from '@/components/ui/Button'
 import { Switch } from '@/components/ui/switch'
  
@@ -40,13 +41,19 @@ export default function ConversationSettings({
   const [section, setSection] = useState<'params' | 'prompt'>('params')
   const [_collapsed, _setCollapsed] = useState<Record<string, boolean>>({})
   const handleSave = () => { onSave(s); onClose() }
-  return (
-    <Dialog open={open} onOpenChange={(v)=>{ if(!v) onClose() }}>
-      <DialogContent className="sm:max-w-[840px]">
-        <DialogHeader>
-          <DialogTitle>会话设置</DialogTitle>
-        </DialogHeader>
-        <div className="w-full">
+    return (
+      <Dialog open={open} onOpenChange={(v)=>{ if(!v) onClose() }}>
+        <DialogShell
+          title="会话设置"
+          contentClassName="sm:max-w-[840px]"
+          bodyClassName="w-full"
+          footer={(
+            <>
+              <Button variant="secondary" size="sm" onClick={onClose}>取消</Button>
+              <Button variant="default" size="sm" onClick={handleSave}>保存</Button>
+            </>
+          )}
+        >
           <div className="flex gap-[12px]">
             <aside className="block w-[180px] bg-surface px-4 py-5 border-r border-app">
               <div className="text-secondary brand-body-xs px-2 py-1">设置项</div>
@@ -220,12 +227,7 @@ export default function ConversationSettings({
               )}
             </div>
           </div>
-            <DialogFooter>
-              <Button size="sm" variant="secondary" onClick={onClose}>取消</Button>
-              <Button size="sm" variant="default" onClick={()=>{ handleSave() }}>保存</Button>
-            </DialogFooter>
-          </div>
-      </DialogContent>
+      </DialogShell>
     </Dialog>
   )
 }
