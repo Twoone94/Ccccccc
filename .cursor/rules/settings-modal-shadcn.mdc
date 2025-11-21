@@ -1,0 +1,119 @@
+# Settings Modal UI Spec (shadcn-style)
+
+## 目标
+- 为“设置弹窗”建立统一的、可复用的设计与实现规范，先不参考 Figma，完全采用 shadcn 风格与语义。
+
+## 技术与依赖
+- 运行时：React 18 + Vite
+- 样式：TailwindCSS（已在 `tailwind.config.cjs` 扩展）、局部可用 SCSS Module
+- 组件模式：自研 `Modal` 组件 + shadcn 风格类名规范（无需安装额外库）
+
+## 设计令牌（Tokens）
+- 颜色
+  - 背景：`bg` → `#121212`
+  - 表面：`surface` → `#1d1d1d`
+  - 边框：`border` → `#27272a`
+  - 文本：`text.primary` → `#fafafa`；`text.secondary` → `#a1a1aa`
+  - 品牌：`brand.DEFAULT` → `#10b981`；`brand.hover` → `#0ea5a4`
+- 圆角：`sm 6px`、`md 8px`、`lg 12px`
+- 阴影：`layer: 0 1px 2px rgba(0,0,0,.3)`；弹窗主体可使用 `0px 25px 50px -12px #00000040`
+
+## 组件结构（Anatomy）
+1. Overlay（遮罩）
+   - 背景：`bg-black/60` + `backdrop-blur-[2px]`
+   - 动效：`opacity` 渐显 `duration-200`，`ease-out`
+2. Content（容器）
+   - 尺寸：`sm 480px`、`md 768px`、`lg 960px`
+   - 样式：`rounded-md border border-app bg-[#0f0f11] shadow-[0px_25px_50px_-12px_#00000040]`
+   - 动效：`opacity + translate-y + scale` 入场 `duration-200 ease-out`
+3. Header（头部）
+   - 排版：`px-4 py-3 border-b border-app`
+   - 文本：标题 `16px/600 text-primary`，说明 `12px/400 text-secondary`
+   - 关闭按钮：`p-1.5 rounded-sm text-secondary hover:bg-app`
+4. Body（内容）
+   - 排版：`p-4`（密集型可用 `p-6`）
+   - 滚动：内部滚动；外层不滚动（移除系统滚动条 `no-scrollbar`）
+5. Footer（底部）
+   - 排版：`px-4 pt-4 border-t border-app flex gap-2`
+   - 按钮：主按钮 + 次按钮
+
+## 排版与间距
+- 基准：8pt 网格（4/8/12/16/24）
+- Header：`12px 16px`
+- Body：外边距 `16-24px`；表单行距 `8-12px`
+- Footer：`16px` 顶部边框 + `8px` 按钮间距
+
+## 字体与字号
+- 家族：`"PingFang SC", "Microsoft YaHei", Arial, Helvetica, sans-serif`
+- 标题：`16px / 600`
+- 分区标题：`14px / 500`
+- 标签/次文案：`12-13px / 500`
+- 说明文字：`12px / 400`
+
+## 色彩与层次
+- 背景/表面/边框/文本严格使用令牌：`bg/surface/border/text.primary/text.secondary`
+- 强调色统一使用 `brand.DEFAULT`，Hover `brand.hover`
+- 输入容器与卡块：背景 `surface`，边框 `border`，圆角 `6px`
+
+## 图标
+- 尺寸：标准 `16px`，辅助 `14px`
+- 颜色：默认 `text.secondary`，激活 `text.primary` 或 `brand`
+- 间距：与文本 `4-8px` 水平间距
+
+## 按钮
+- 主按钮：
+  - 类名：`inline-flex items-center gap-1.5 rounded-sm bg-brand text-white px-3 py-2 text-[13px] font-medium transition-colors hover:bg-[var(--brand-hover,#0ea5a4)]`
+- 次按钮：
+  - 类名：`inline-flex items-center gap-1.5 rounded-sm bg-surface border border-app text-primary px-3 py-2 text-[13px] font-medium transition-colors hover:bg-[#222]`
+
+## 输入与表单
+- 容器：`flex items-center justify-between min-h-[36px] rounded-sm bg-surface border border-app px-3`
+- 焦点态：`ring-2 ring-brand` 或边框置换为 `brand`
+- 标签：`text-[12px] text-secondary`
+- 占位/说明：`text-[12px] text-secondary`
+
+## 动效
+- 遮罩：`opacity-0 → opacity-100`，`200ms ease-out`
+- 容器：`opacity-0 translate-y-1 scale-[0.98] → opacity-100 translate-y-0 scale-100`，`200ms ease-out`
+- 悬停：按钮与分组底线 `200ms` 色彩过渡
+
+## 可访问性（A11y）
+- 键盘：`Esc` 关闭；`Tab/Shift+Tab` 焦点循环；首焦点置于标题或第一个交互控件
+- 语义：`role="dialog" aria-modal="true"`；关闭按钮 `aria-label="关闭"`
+- 对比度：暗色主题最小对比度，关键文本使用 `text.primary`
+
+## 代码模式（示例）
+```tsx
+// 容器（示例类名，结合已有 Modal 容器使用）
+<div className="fixed inset-0 z-[100] flex items-center justify-center">
+  <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-200" />
+  <div className="relative z-[101] w-[768px] max-w-[96vw] rounded-md border border-app bg-[#0f0f11] shadow-[0px_25px_50px_-12px_#00000040] transition-all duration-200 ease-out">
+    <div className="flex items-start justify-between border-b border-app px-4 py-3">
+      <div className="flex flex-col gap-1">
+        <p className="text-primary text-[16px] font-semibold">设置</p>
+        <p className="text-secondary text-[12px]">全局配置</p>
+      </div>
+      <button type="button" aria-label="关闭" className="inline-flex items-center justify-center rounded-sm p-[5px] text-secondary hover:bg-app">×</button>
+    </div>
+    <div className="p-4">
+      {/* 表单与内容块 */}
+    </div>
+    <div className="flex gap-2 border-t border-app px-4 pt-4">
+      <button className="inline-flex items-center gap-1.5 rounded-sm bg-brand text-white px-3 py-2 text-[13px] font-medium transition-colors">保存</button>
+      <button className="inline-flex items-center gap-1.5 rounded-sm bg-surface border border-app text-primary px-3 py-2 text-[13px] font-medium transition-colors">取消</button>
+    </div>
+  </div>
+</div>
+```
+
+## 重构准则
+1. 替换所有非令牌色为 `bg/surface/border/text/brand`
+2. 字体族统一为中文友好组合，字号按层级规范
+3. 按钮/输入的尺寸与圆角统一为 `8px/6px`
+4. 入场与 Hover 动效统一为 `200ms ease-out`
+5. 完善 A11y：焦点循环、语义属性、关闭快捷键
+
+## 迁移策略
+- 第一步：用上述类名规范替换现有 Figma 产物的样式，保持 JSX 结构不变
+- 第二步：抽象为可复用的 `SettingsPanel` 子组件（表单控件拆分与状态管理）
+- 第三步：与 `src/store/settings.ts` 对接（读写、校验、反馈）
