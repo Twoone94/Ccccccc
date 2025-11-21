@@ -1,20 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import VideoThumbList from '../components/business/VideoThumbList'
-import ImageThumbList from '../components/business/ImageThumbList'
 import Toolbar from '../components/ui/Toolbar'
 import Button from '../components/ui/Button'
-import { Dialog, DialogFooter } from '@/components/ui/dialog'
-import DialogShell from '@/components/ui/dialog-shell'
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent } from '@/components/ui/dropdown-menu'
-import { Input } from '@/components/ui/input'
+import { DialogFooter } from '@/components/ui/dialog'
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { loadProject, saveProject, ProjectData, ProjectItem } from '../store/project'
 import { parseStoryboardText } from '../utils/storyboard'
 import { splitChineseSentences } from '../utils/text'
 import SettingsDialog from '../components/business/SettingsDialog'
 import { loadSettings, saveSettings, Settings, type AIProvider } from '../store/settings'
-import { Home, Settings as SettingsIcon, Maximize2, X } from 'lucide-react'
+import { Home, Settings as SettingsIcon, Maximize2, X, LayoutGrid } from 'lucide-react'
+import StoryRow, { LayoutState } from '@/components/storyboard/StoryRow'
 
 export default function ProjectInterface() {
   const navigate = useNavigate();
@@ -37,20 +35,15 @@ export default function ProjectInterface() {
   const tableRef = useRef<HTMLDivElement>(null);
   const topSectionRef = useRef<HTMLDivElement>(null);
   const [tableHeight, setTableHeight] = useState<number | undefined>(undefined);
-  const [rowHeight, setRowHeight] = useState(180);
   const [_scrollThumb, setScrollThumb] = useState({ visible: false, active: false, h: 0, top: 0 });
   const [scrollIndex, setScrollIndex] = useState(1);
-  const listRefs = useRef<Record<number, HTMLDivElement | null>>({});
-  const [listBars, setListBars] = useState<Record<number, { visible: boolean; active: boolean; h: number; top: number }>>({});
-  const currentVideoRefs = useRef<Record<number, HTMLDivElement | null>>({});
-  const [thumbWByRow, setThumbWByRow] = useState<Record<number, number>>({});
-  const [previewOpen, setPreviewOpen] = useState(false)
-  const [previewTarget, setPreviewTarget] = useState<{ id: number; video?: string } | null>(null)
   const [figmaSettingsOpen, setFigmaSettingsOpen] = useState(false)
   const imageTriggerRef = useRef<HTMLButtonElement | null>(null)
   const projectTriggerRef = useRef<HTMLButtonElement | null>(null)
   const saveTimerRef = useRef<number | null>(null)
   const saveLatestRef = useRef<ProjectData | null>(null)
+  const [layoutState, setLayoutState] = useState<LayoutState>({ showPose: true, showI2V: true, showVideo: true })
+  const rowHeight = 230
 
   // 计算真实的统计数据
   const calculateStats = (items: ProjectItem[]) => {
@@ -247,44 +240,9 @@ export default function ProjectInterface() {
     return () => window.removeEventListener('resize', onResize);
   }, [computeLayout, computeScroll]);
 
-  useEffect(() => {
-    computeScroll();
-  }, [computeScroll, rowHeight, tableHeight]);
-
-  const computeThumbWidth = (id: number) => {
-    const curr = currentVideoRefs.current[id];
-    const sel = listRefs.current[id];
-    const currW = curr ? curr.clientWidth : 0;
-    const selW = sel ? sel.clientWidth : 0;
-    let w = currW;
-    if (selW > 0 && w > 0) w = Math.min(w, selW - 8);
-    if (!w || w <= 0) w = Math.max(160, selW ? Math.min(selW - 8, 220) : 220);
-    setThumbWByRow(prev => ({ ...prev, [id]: w }));
-  };
-
-  useEffect(() => {
-    projectData.items.forEach(it => computeThumbWidth(it.id));
-  }, [projectData.items, rowHeight, tableHeight]);
-
-  useEffect(() => {
-    const onResize = () => { projectData.items.forEach(it => computeThumbWidth(it.id)); };
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, [projectData.items]);
-
-  const computeListBar = (id: number) => {
-    const el = listRefs.current[id];
-    if (!el) return;
-    const visible = el.scrollHeight > el.clientHeight;
-    const th = Math.max(40, Math.floor((el.clientHeight / el.scrollHeight) * el.clientHeight));
-    const track = el.clientHeight - th;
-    const top = Math.floor((el.scrollTop / Math.max(1, el.scrollHeight - el.clientHeight)) * track);
-    setListBars(prev => ({ ...prev, [id]: { visible, active: false, h: th, top: isFinite(top) ? top : 0 } }));
-  };
-
-  useEffect(() => {
-    projectData.items.forEach(it => computeListBar(it.id));
-  }, [projectData.items, rowHeight, tableHeight]);
+    useEffect(() => {
+      computeScroll();
+    }, [computeScroll, rowHeight, tableHeight]);
 
   // 保存项目数据到本地（按 pid）
   const _onSaveProject = () => {
@@ -370,13 +328,7 @@ export default function ProjectInterface() {
     }, 3000)
   };
 
-  // 优化分镜
-  const optimizeScene = (itemId: number) => {
-    console.log('优化分镜:', itemId);
-    // 这里可以添加优化逻辑
-  };
-
-  // 导入分镜
+    // 导入分镜
   const importStoryboard = () => {
     if (selectedFile) {
       if (selectedFile.name.toLowerCase().endsWith('.txt') || selectedFile.name.toLowerCase().endsWith('.md')) {
@@ -388,11 +340,11 @@ export default function ProjectInterface() {
     if (input) input.click();
   };
 
-  const importStoryboardText = (text: string) => {
-    const parsed = parseStoryboardText(text)
-    const items: ProjectItem[] = parsed.map(p => ({
-      id: p.id,
-      type: p.type,
+    const importStoryboardText = (text: string) => {
+      const parsed = parseStoryboardText(text)
+      const items: ProjectItem[] = parsed.map(p => ({
+        id: p.id,
+        type: p.type,
       description: p.description,
       script: p.script,
       scriptLines: splitChineseSentences(p.script || p.description),
@@ -406,42 +358,66 @@ export default function ProjectInterface() {
       const next = { ...prev, items, ...stats }
       scheduleSave(next)
       return next
-    })
-    setTimeout(() => { computeLayout(); computeScroll(); }, 0)
+      })
+      setTimeout(() => { computeLayout(); computeScroll(); }, 0)
+    };
+
+    const handleMergeUp = (itemId: number) => {
+      setProjectData(prev => {
+        const items = [...prev.items]
+        const curIdx = items.findIndex(it => it.id === itemId)
+        if (curIdx <= 0) return prev
+        const cur = items[curIdx]
+        const prv = items[curIdx - 1]
+        const lines = (cur.scriptLines && cur.scriptLines.length > 0 ? cur.scriptLines : splitChineseSentences(cur.script ?? cur.description))
+        const plines = (prv.scriptLines && prv.scriptLines.length > 0 ? prv.scriptLines : splitChineseSentences(prv.script ?? prv.description))
+        const mergedLines = [...plines, ...lines]
+        items[curIdx - 1] = { ...prv, scriptLines: mergedLines, script: mergedLines.join('') }
+        items.splice(curIdx, 1)
+        items.forEach((it, i) => { it.id = i + 1 })
+        const stats = calculateStats(items)
+        const next = { ...prev, items, ...stats }
+        scheduleSave(next)
+        return next
+      })
+    }
+
+    const handleSplitDown = (itemId: number, idx: number) => {
+      setProjectData(prev => {
+        const items = [...prev.items]
+        const curIdx = items.findIndex(it => it.id === itemId)
+        if (curIdx < 0) return prev
+        const cur = items[curIdx]
+        const lines = (cur.scriptLines && cur.scriptLines.length > 0 ? cur.scriptLines : splitChineseSentences(cur.script ?? cur.description))
+        if (lines.length <= 1 || idx >= lines.length - 1) return prev
+        const keep = lines.slice(0, idx + 1)
+        const rest = lines.slice(idx + 1)
+        items[curIdx] = { ...cur, scriptLines: keep, script: keep.join('') }
+        const insertItem = { ...cur, id: cur.id + 1, scriptLines: rest, script: rest.join('') }
+        items.splice(curIdx + 1, 0, insertItem)
+        items.forEach((it, i) => { it.id = i + 1 })
+        const stats = calculateStats(items)
+        const next = { ...prev, items, ...stats }
+        scheduleSave(next)
+        return next
+      })
+    }
+
+    const handleScriptChange = (itemId: number, value: string) => {
+      const lines = splitChineseSentences(value)
+      setProjectData(prev => {
+        const items = prev.items.map(it => it.id === itemId ? { ...it, script: value, scriptLines: lines } : it)
+        const next = { ...prev, items }
+        scheduleSave(next)
+        return next
+      })
+    }
+
+    // 批量生成视频
+    const batchGenerateVideos = () => {
+      const pendingItems = projectData.items.filter(item => item.status === 'pending');
+      pendingItems.forEach(item => generateVideo(item.id));
   };
-
-  // 批量生成视频
-  const batchGenerateVideos = () => {
-    const pendingItems = projectData.items.filter(item => item.status === 'pending');
-    pendingItems.forEach(item => generateVideo(item.id));
-  };
-
-  // 批量生成分镜图描述词（占位实现）
-  const batchInferImagePrompts = () => {
-    const nextItems = projectData.items.map(it => ({
-      ...it,
-      imagePrompt: it.imagePrompt || `镜头描述：${it.description}`
-    }))
-    const stats = calculateStats(nextItems)
-    const next = { ...projectData, items: nextItems, ...stats }
-    scheduleSave(next)
-    setProjectData(next)
-  }
-
-  // 批量生图（占位实现，使用内置资源占位）
-  const batchGenerateImages = () => {
-    const placeholder = '/image/mi0cnlbq-sh4drqu.svg'
-    const nextItems = projectData.items.map(it => ({
-      ...it,
-      imageOptions: it.imageOptions && it.imageOptions.length > 0 ? it.imageOptions : [placeholder, placeholder],
-      currentImage: it.currentImage || placeholder,
-      imageStatus: 'generated' as const
-    }))
-    const stats = calculateStats(nextItems)
-    const next = { ...projectData, items: nextItems, ...stats }
-    scheduleSave(next)
-    setProjectData(next)
-  }
 
   // 批量推理角色
   const batchInferCharacters = () => {
@@ -453,24 +429,6 @@ export default function ProjectInterface() {
   const batchInferScenes = () => {
     console.log('批量推理分镜');
     // 这里可以添加批量推理逻辑
-  };
-
-  // 获取状态颜色
-  const _getStatusColor = (status: string) => {
-    switch (status) {
-      case 'generated': return 'text-success';
-      case 'generating': return 'text-warning';
-      default: return 'text-primary';
-    }
-  };
-
-  // 获取类型标签颜色
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'transition': return 'bg-yellow-500/20 text-yellow-400';
-      case 'scene': return 'bg-blue-500/20 text-blue-400';
-      default: return 'bg-gray-500/20 text-gray-400';
-    }
   };
 
   return (
@@ -499,17 +457,6 @@ export default function ProjectInterface() {
           <button type="button" aria-label="关闭窗口" className="inline-flex flex-shrink-0 items-center justify-center rounded-sm w-[28px] h-[28px] p-[5px]" onClick={() => { const desktop = (window as unknown as { desktop?: { window?: { close?: () => void } } }).desktop; desktop?.window?.close?.() }}>
             <X className="w-[18px] h-[18px]" />
           </button>
-    <Dialog open={previewOpen} onOpenChange={(v)=>{ if(!v) setPreviewOpen(false) }}>
-      <DialogShell
-        title={previewTarget?.video ? `预览 ${previewTarget.video}` : '预览'}
-        contentClassName="sm:max-w-[840px]"
-        bodyClassName="space-y-2"
-      >
-        <div className="bg-black rounded w-full" style={{ aspectRatio: '16 / 9' }} />
-        <p className="mt-[8px] text-xs text-white/70">行号: {previewTarget?.id} {previewTarget?.video ? `视频: ${previewTarget.video}` : '未选择视频'}</p>
-      </DialogShell>
-    </Dialog>
-    
     <SettingsDialog open={figmaSettingsOpen} onClose={() => setFigmaSettingsOpen(false)} />
   </div>
       </Toolbar>
@@ -543,6 +490,33 @@ export default function ProjectInterface() {
             <div className="flex items-center px-2 py-1 rounded bg-surface">
               <span className="text-xs text-secondary">AI ver: {projectData.aiVersion}</span>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="sm" className="flex items-center gap-1">
+                  <LayoutGrid className="w-4 h-4" /> 布局
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="bg-[#262626] text-gray-200 border border-zinc-700/50 min-w-[180px]">
+                <DropdownMenuCheckboxItem
+                  checked={layoutState.showPose}
+                  onCheckedChange={(v) => setLayoutState((prev) => ({ ...prev, showPose: !!v }))}
+                >
+                  参考 Pose
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={layoutState.showI2V}
+                  onCheckedChange={(v) => setLayoutState((prev) => ({ ...prev, showI2V: !!v }))}
+                >
+                  I2V Prompt
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
+                  checked={layoutState.showVideo}
+                  onCheckedChange={(v) => setLayoutState((prev) => ({ ...prev, showVideo: !!v }))}
+                >
+                  视频生成面板
+                </DropdownMenuCheckboxItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -618,258 +592,79 @@ export default function ProjectInterface() {
         </div>
       </div>
 
-      {/* 表格区域 */}
-      <div ref={tableRef} className="overflow-auto scroll-smooth relative bg-app no-scrollbar overscroll-contain" style={tableHeight ? { height: tableHeight } : undefined} onScroll={computeScroll} onWheel={(e) => {
-        const target = e.target as HTMLElement;
-        if (target && target.closest('[data-vsel]')) return;
-        smartWheel(tableRef.current, e);
-        computeScroll();
-      }}>
-        <div className="min-w-[1280px]">
-        {/* 表头 */}
-        <div className="flex items-stretch bg-surface border-b border-app sticky top-0 z-10">
-          <div className="flex items-center justify-center basis-[60px] shrink-0 px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">编号</span>
-          </div>
-          <div className="flex items-center justify-between basis-[120px] shrink-0 px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">预设</span>
-
-          </div>
-          <div className="flex items-center justify-between flex-1 min-w-[300px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">剧本</span>
-            <div className="flex gap-1">
-              <Button variant="secondary" size="sm">操作</Button>
-              <Button variant="secondary" size="sm">替换</Button>
-            </div>
-          </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[220px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">分镜图描述词</span>
-            <Button variant="secondary" size="sm" onClick={batchInferImagePrompts}>批量生成</Button>
-          </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[220px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">视频描述词</span>
-          </div>
-          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">角色选择</span>
-            <Button variant="secondary" size="sm">操作</Button>
-          </div>
-          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">当前分镜</span>
-            <Button variant="secondary" size="sm">操作</Button>
-          </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[180px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">分镜选择</span>
-            <Button variant="secondary" size="sm" onClick={batchGenerateImages}>批量生图</Button>
-          </div>
-          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">当前视频</span>
-            <Button variant="secondary" size="sm">操作</Button>
-          </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[180px] px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">视频选择</span>
-            <Button variant="secondary" size="sm">操作</Button>
-          </div>
-          <div className="flex items-center justify-center basis-[120px] shrink-0 px-3 py-2">
-            <span className="text-xs font-semibold text-secondary uppercase">操作</span>
-          </div>
-        </div>
-
-        {/* 表格内容 */}
-        {projectData.items.map((item) => {
-          const scriptLines = (item.scriptLines && item.scriptLines.length > 0
-            ? item.scriptLines
-            : splitChineseSentences(item.script ?? item.description));
-
-          return (
-            <div key={item.id} className="flex items-stretch border-b border-app bg-app" style={{ height: rowHeight }}>
-            <div className="flex items-center justify-center basis-[60px] shrink-0 px-3">
-              <span className="text-xs text-secondary">{item.id}</span>
-            </div>
-            <div className="flex items-start basis-[120px] shrink-0 px-3 py-2">
-              <div className={`px-2 py-0.5 text-xs rounded ${getTypeColor(item.type)}`}>{item.type === 'scene' ? '场景' : '转场'}</div>
-            </div>
-            <div className="flex-1 min-w-[300px] px-3 py-3 flex items-start">
-              <div className="flex flex-col gap-3 w-full">
-                <p className="text-xs text-primary leading-relaxed bg-surface border border-app/60 rounded px-3 py-2 shadow-sm whitespace-pre-wrap break-words">{item.script ?? item.description}</p>
-                <div className="flex flex-col gap-2">
-                  {scriptLines.map((line, idx) => (
-                    <div key={idx} className="flex items-stretch gap-2">
-                      <div className="flex-1 text-xs text-secondary leading-relaxed bg-surface rounded border border-app/60 px-3 py-2 whitespace-pre-wrap break-words shadow-sm">
-                        {line}
-                      </div>
-                      <div className="flex flex-col justify-between text-[11px] leading-tight min-w-[66px] text-primary">
-                        <button
-                          type="button"
-                          className="text-left text-primary hover:text-primary/80"
-                          onClick={() => {
-                            setProjectData(prev => {
-                              const items = [...prev.items]
-                              const curIdx = items.findIndex(it => it.id === item.id)
-                              if (curIdx <= 0) return prev
-                              const cur = items[curIdx]
-                              const prv = items[curIdx - 1]
-                              const lines = (cur.scriptLines && cur.scriptLines.length > 0 ? cur.scriptLines : splitChineseSentences(cur.script ?? cur.description))
-                              const plines = (prv.scriptLines && prv.scriptLines.length > 0 ? prv.scriptLines : splitChineseSentences(prv.script ?? prv.description))
-                              const mergedLines = [...plines, ...lines]
-                              items[curIdx - 1] = { ...prv, scriptLines: mergedLines, script: mergedLines.join('') }
-                              items.splice(curIdx, 1)
-                              items.forEach((it, i) => { it.id = i + 1 })
-                              const stats = calculateStats(items)
-                              const next = { ...prev, items, ...stats }
-                              scheduleSave(next)
-                              return next
-                            })
-                          }}
-                        >向上合并</button>
-                        <button
-                          type="button"
-                          className="text-left text-primary hover:text-primary/80"
-                          onClick={() => {
-                            setProjectData(prev => {
-                              const items = [...prev.items]
-                              const curIdx = items.findIndex(it => it.id === item.id)
-                              if (curIdx < 0) return prev
-                              const cur = items[curIdx]
-                              const lines = (cur.scriptLines && cur.scriptLines.length > 0 ? cur.scriptLines : splitChineseSentences(cur.script ?? cur.description))
-                              if (lines.length <= 1 || idx >= lines.length - 1) return prev
-                              const keep = lines.slice(0, idx + 1)
-                              const rest = lines.slice(idx + 1)
-                              items[curIdx] = { ...cur, scriptLines: keep, script: keep.join('') }
-                              const insertItem = { ...cur, id: cur.id + 1, scriptLines: rest, script: rest.join('') }
-                              items.splice(curIdx + 1, 0, insertItem)
-                              items.forEach((it, i) => { it.id = i + 1 })
-                              const stats = calculateStats(items)
-                              const next = { ...prev, items, ...stats }
-                              scheduleSave(next)
-                              return next
-                            })
-                          }}
-                        >向下拆分</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {/* 表格区域 */}
+        <div
+          ref={tableRef}
+          className="overflow-auto scroll-smooth relative bg-[#0f0f0f] no-scrollbar overscroll-contain"
+          style={tableHeight ? { height: tableHeight } : undefined}
+          onScroll={computeScroll}
+          onWheel={(e) => {
+            const target = e.target as HTMLElement;
+            if (target && target.closest('[data-vsel]')) return;
+            smartWheel(tableRef.current, e);
+            computeScroll();
+          }}
+        >
+          <div className="min-w-[1200px]">
+            <div className="flex items-center justify-between px-4 py-2 sticky top-0 z-10 bg-[#1a1a1a] border-b border-zinc-700/50">
+              <div className="flex items-center gap-3 text-xs uppercase tracking-[0.08em] text-gray-500">
+                <span className="px-2 py-1 rounded bg-[#262626] text-gray-200">编号</span>
+                <span className="px-2 py-1 rounded bg-[#262626] text-gray-200">剧本</span>
+                <span className="px-2 py-1 rounded bg-[#262626] text-gray-200">Prompt</span>
+                {layoutState.showPose && <span className="px-2 py-1 rounded bg-[#262626] text-gray-200">Pose</span>}
+                {layoutState.showI2V && <span className="px-2 py-1 rounded bg-[#262626] text-gray-200">I2V</span>}
+                {layoutState.showVideo && <span className="px-2 py-1 rounded bg-[#262626] text-gray-200">视觉生成</span>}
+              </div>
+              <div className="flex items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" size="sm" className="flex items-center gap-2">
+                      <LayoutGrid className="w-4 h-4" /> 布局
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-[#262626] text-gray-200 border border-zinc-700/50 min-w-[180px]">
+                    <DropdownMenuCheckboxItem
+                      checked={layoutState.showPose}
+                      onCheckedChange={(v) => setLayoutState((prev) => ({ ...prev, showPose: !!v }))}
+                    >
+                      参考 Pose
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={layoutState.showI2V}
+                      onCheckedChange={(v) => setLayoutState((prev) => ({ ...prev, showI2V: !!v }))}
+                    >
+                      I2V Prompt
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={layoutState.showVideo}
+                      onCheckedChange={(v) => setLayoutState((prev) => ({ ...prev, showVideo: !!v }))}
+                    >
+                      视频生成面板
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
-            <div className="basis-[20%] min-w-[220px] px-3 py-2 flex items-start">
-              <Input value={item.imagePrompt ?? ''} onChange={(e)=>{
-                const v = e.target.value
-                setProjectData(prev => ({
-                  ...prev,
-                  items: prev.items.map(it => it.id === item.id ? { ...it, imagePrompt: v } : it)
-                }))
-              }} className="w-full bg-app text-primary border border-app h-[30px]" placeholder="图像描述词" />
+
+            <div className="flex flex-col">
+              {projectData.items.map((item) => (
+                <StoryRow
+                  key={item.id}
+                  index={item.id}
+                  item={item}
+                  layoutState={layoutState}
+                  onMergeUp={() => handleMergeUp(item.id)}
+                  onSplitDown={(idx) => handleSplitDown(item.id, idx)}
+                  onScriptChange={(value) => handleScriptChange(item.id, value)}
+                />
+              ))}
             </div>
-            <div className="basis-[20%] min-w-[220px] px-3 py-2 flex items-start">
-              <Input value={item.videoPrompt ?? ''} onChange={(e)=>{
-                const v = e.target.value
-                setProjectData(prev => ({
-                  ...prev,
-                  items: prev.items.map(it => it.id === item.id ? { ...it, videoPrompt: v } : it)
-                }))
-              }} className="w-full bg-app text-primary border border-app h-[30px]" placeholder="视频描述词" />
-            </div>
-            <div className="basis-[18%] min-w-[180px] px-3 py-2 flex items-center justify-center">
-              {item.characters && item.characters.length > 0 ? (
-                <div className="grid grid-cols-2 gap-2">
-                  {[0,1,2,3].map((i) => (
-                    <div key={i} className="w-[74px] h-[74px] bg-black rounded" />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <div className="w-[74px] h-[74px] bg-black rounded" />
-                  <div className="w-[74px] h-[74px] bg-black rounded" />
-                </div>
-              )}
-            </div>
-            <div className="basis-[18%] min-w-[180px] px-3 py-2 flex items-center justify-center">
-              <div className="bg-black rounded w-full max-w-[220px]" style={{ aspectRatio: '16 / 9', overflow: 'hidden' }}>
-                {item.currentImage && (<img src={item.currentImage} alt="当前分镜" className="w-full h-full object-cover" />)}
-              </div>
-            </div>
-            <ImageThumbList
-              setContainerRef={(el) => { listRefs.current[item.id] = el; }}
-              options={(Array.isArray(item.imageOptions) && item.imageOptions.length > 0 ? item.imageOptions : [null]) as (string | null)[]}
-              bar={listBars[item.id]}
-              setBarActive={(active) => {
-                const b = listBars[item.id];
-                if (!b) return;
-                setListBars(prev => ({ ...prev, [item.id]: { ...b, active } }));
-              }}
-              onScroll={() => computeListBar(item.id)}
-              onWheel={(e) => {
-                smartWheel(listRefs.current[item.id] as HTMLElement | null, e, true);
-                computeListBar(item.id);
-              }}
-              thumbWidth={thumbWByRow[item.id]}
-              dataKey={item.id}
-              selected={item.currentImage ?? null}
-              onSelect={(value) => {
-                setProjectData(prev => ({
-                  ...prev,
-                  items: prev.items.map(it => it.id === item.id ? { ...it, currentImage: value ?? undefined } : it)
-                }))
-              }}
-            />
-            <div className="basis-[18%] min-w-[180px] px-3 py-2 flex items-center justify-center">
-              <div
-                ref={(el) => { currentVideoRefs.current[item.id] = el; }}
-                className="bg-black rounded w-full max-w-[220px]"
-                style={{ aspectRatio: '16 / 9' }}
-                onDoubleClick={() => { setPreviewTarget({ id: item.id, video: item.currentVideo }); setPreviewOpen(true) }}
-              />
-            </div>
-            <VideoThumbList
-              setContainerRef={(el) => { listRefs.current[item.id] = el; }}
-              options={(Array.isArray(item.videoOptions) && item.videoOptions.length > 0 ? item.videoOptions : [null]) as (string | null)[]}
-              bar={listBars[item.id]}
-              setBarActive={(active) => {
-                const b = listBars[item.id];
-                if (!b) return;
-                setListBars(prev => ({ ...prev, [item.id]: { ...b, active } }));
-              }}
-              onScroll={() => computeListBar(item.id)}
-              onWheel={(e) => {
-                smartWheel(listRefs.current[item.id] as HTMLElement | null, e, true);
-                computeListBar(item.id);
-              }}
-              thumbWidth={thumbWByRow[item.id]}
-              dataKey={item.id}
-              selected={item.currentVideo ?? null}
-              onSelect={(value) => {
-                setProjectData(prev => ({
-                  ...prev,
-                  items: prev.items.map(it => it.id === item.id ? { ...it, currentVideo: value ?? undefined } : it)
-                }))
-              }}
-            />
-            <div className="basis-[120px] shrink-0 px-3 py-2 flex flex-col items-center justify-center gap-2">
-              <button
-                onClick={() => generateVideo(item.id)}
-                disabled={item.status === 'generating'}
-                className={`w-full px-2 py-1 text-xs rounded-sm transition-colors ${
-                  item.status === 'generating'
-                    ? 'bg-warning-subtle text-warning cursor-not-allowed'
-                    : item.status === 'generated'
-                    ? 'bg-success-subtle text-success'
-                    : 'bg-surface hover:bg-surface-hover text-primary'
-                }`}
-              >
-                {item.status === 'generating' ? '生成中...' : '生成视频'}
-              </button>
-              <Button size="sm" variant="secondary" onClick={() => optimizeScene(item.id)} className="w-full">优化分镜</Button>
-            </div>
+            <div className="absolute right-[12px] top-[8px] text-xs text-gray-400">{scrollIndex} / {projectData.items.length || 1}</div>
           </div>
-          )
-        })}
-        <div className="absolute right-[12px] top-[8px] brand-body-xs nums-tabular text-secondary">{scrollIndex} / {projectData.items.length || 1}</div>
         </div>
-      </div>
     </div>
   );
 };
-
 function ImageSettings({ onClose }: { onClose: () => void }) {
   const [s, setS] = useState<Settings>(loadSettings())
   const setAI = (next: Partial<Settings['ai']>) => setS(prev => ({ ...prev, ai: { ...prev.ai, ...next } }))
