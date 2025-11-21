@@ -628,44 +628,44 @@ export default function ProjectInterface() {
         <div className="min-w-[1280px]">
         {/* 表头 */}
         <div className="flex items-stretch bg-surface border-b border-app sticky top-0 z-10">
-          <div className="flex items-center justify-center basis-[60px] shrink-0 px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-center basis-[60px] shrink-0 px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">编号</span>
           </div>
-          <div className="flex items-center justify-between basis-[120px] shrink-0 px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[120px] shrink-0 px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">预设</span>
-            
+
           </div>
-          <div className="flex items-center justify-between flex-1 min-w-[300px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between flex-1 min-w-[300px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">剧本</span>
             <div className="flex gap-1">
               <Button variant="secondary" size="sm">操作</Button>
               <Button variant="secondary" size="sm">替换</Button>
             </div>
           </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[220px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[20%] min-w-[220px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">分镜图描述词</span>
             <Button variant="secondary" size="sm" onClick={batchInferImagePrompts}>批量生成</Button>
           </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[220px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[20%] min-w-[220px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">视频描述词</span>
           </div>
-          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">角色选择</span>
             <Button variant="secondary" size="sm">操作</Button>
           </div>
-          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">当前分镜</span>
             <Button variant="secondary" size="sm">操作</Button>
           </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[180px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[20%] min-w-[180px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">分镜选择</span>
             <Button variant="secondary" size="sm" onClick={batchGenerateImages}>批量生图</Button>
           </div>
-          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[18%] min-w-[180px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">当前视频</span>
             <Button variant="secondary" size="sm">操作</Button>
           </div>
-          <div className="flex items-center justify-between basis-[20%] min-w-[180px] px-3 py-2 border-r border-app">
+          <div className="flex items-center justify-between basis-[20%] min-w-[180px] px-3 py-2">
             <span className="text-xs font-semibold text-secondary uppercase">视频选择</span>
             <Button variant="secondary" size="sm">操作</Button>
           </div>
@@ -675,23 +675,33 @@ export default function ProjectInterface() {
         </div>
 
         {/* 表格内容 */}
-        {projectData.items.map((item) => (
-          <div key={item.id} className="flex items-stretch border-b border-app bg-app" style={{ height: rowHeight }}>
-            <div className="flex items-center justify-center basis-[60px] shrink-0 px-3 border-r border-app">
+        {projectData.items.map((item) => {
+          const scriptLines = (item.scriptLines && item.scriptLines.length > 0
+            ? item.scriptLines
+            : splitChineseSentences(item.script ?? item.description));
+
+          return (
+            <div key={item.id} className="flex items-stretch border-b border-app bg-app" style={{ height: rowHeight }}>
+            <div className="flex items-center justify-center basis-[60px] shrink-0 px-3">
               <span className="text-xs text-secondary">{item.id}</span>
             </div>
-            <div className="flex items-start basis-[120px] shrink-0 px-3 py-2 border-r border-app">
+            <div className="flex items-start basis-[120px] shrink-0 px-3 py-2">
               <div className={`px-2 py-0.5 text-xs rounded ${getTypeColor(item.type)}`}>{item.type === 'scene' ? '场景' : '转场'}</div>
             </div>
-            <div className="flex-1 min-w-[300px] px-3 py-3 border-r border-app flex items-start">
-              <div className="flex flex-col gap-1 w-full">
+            <div className="flex-1 min-w-[300px] px-3 py-3 flex items-start">
+              <div className="flex flex-col gap-2 w-full">
                 <p className="text-xs text-primary leading-relaxed">{item.script ?? item.description}</p>
-                <div className="mt-2">
-                  {(item.scriptLines && item.scriptLines.length>0 ? item.scriptLines : splitChineseSentences(item.script ?? item.description)).map((line, idx) => (
-                    <p key={idx} className="text-xs text-secondary leading-relaxed">{line}</p>
+                <div className="grid gap-2">
+                  {scriptLines.map((line, idx) => (
+                    <div
+                      key={idx}
+                      className="text-xs text-secondary leading-relaxed bg-surface rounded border border-app/60 px-2 py-1 whitespace-pre-wrap break-words shadow-sm"
+                    >
+                      {line}
+                    </div>
                   ))}
                 </div>
-                <div className="inline-flex gap-2 mt-2">
+                <div className="flex flex-wrap gap-2 mt-1">
                   <Button variant="secondary" size="sm" onClick={() => {
                     setProjectData(prev => {
                       const items = [...prev.items]
@@ -750,7 +760,7 @@ export default function ProjectInterface() {
                 </div>
               </div>
             </div>
-            <div className="basis-[20%] min-w-[220px] px-3 py-2 border-r border-app flex items-start">
+            <div className="basis-[20%] min-w-[220px] px-3 py-2 flex items-start">
               <Input value={item.imagePrompt ?? ''} onChange={(e)=>{
                 const v = e.target.value
                 setProjectData(prev => ({
@@ -759,7 +769,7 @@ export default function ProjectInterface() {
                 }))
               }} className="w-full bg-app text-primary border border-app h-[30px]" placeholder="图像描述词" />
             </div>
-            <div className="basis-[20%] min-w-[220px] px-3 py-2 border-r border-app flex items-start">
+            <div className="basis-[20%] min-w-[220px] px-3 py-2 flex items-start">
               <Input value={item.videoPrompt ?? ''} onChange={(e)=>{
                 const v = e.target.value
                 setProjectData(prev => ({
@@ -768,7 +778,7 @@ export default function ProjectInterface() {
                 }))
               }} className="w-full bg-app text-primary border border-app h-[30px]" placeholder="视频描述词" />
             </div>
-            <div className="basis-[18%] min-w-[180px] px-3 py-2 border-r border-app flex items-center justify-center">
+            <div className="basis-[18%] min-w-[180px] px-3 py-2 flex items-center justify-center">
               {item.characters && item.characters.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
                   {[0,1,2,3].map((i) => (
@@ -782,7 +792,7 @@ export default function ProjectInterface() {
                 </div>
               )}
             </div>
-            <div className="basis-[18%] min-w-[180px] px-3 py-2 border-r border-app flex items-center justify-center">
+            <div className="basis-[18%] min-w-[180px] px-3 py-2 flex items-center justify-center">
               <div className="bg-black rounded w-full max-w-[220px]" style={{ aspectRatio: '16 / 9', overflow: 'hidden' }}>
                 {item.currentImage && (<img src={item.currentImage} alt="当前分镜" className="w-full h-full object-cover" />)}
               </div>
@@ -811,7 +821,7 @@ export default function ProjectInterface() {
                 }))
               }}
             />
-            <div className="basis-[18%] min-w-[180px] px-3 py-2 border-r border-app flex items-center justify-center">
+            <div className="basis-[18%] min-w-[180px] px-3 py-2 flex items-center justify-center">
               <div
                 ref={(el) => { currentVideoRefs.current[item.id] = el; }}
                 className="bg-black rounded w-full max-w-[220px]"
@@ -860,7 +870,8 @@ export default function ProjectInterface() {
               <Button size="sm" variant="secondary" onClick={() => optimizeScene(item.id)} className="w-full">优化分镜</Button>
             </div>
           </div>
-        ))}
+          )
+        })}
         <div className="absolute right-[12px] top-[8px] brand-body-xs nums-tabular text-secondary">{scrollIndex} / {projectData.items.length || 1}</div>
         </div>
       </div>
